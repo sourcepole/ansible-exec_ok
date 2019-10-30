@@ -1,0 +1,346 @@
+# run this test like this:
+#
+#     $ ansible-playbook main.yml
+#     $ ansible-playbook --check main.yml
+#
+# if you replace below `exec_ok` with ansible's
+# `success` then the test will fail. See the
+# `README.md` one directory further up for explanations.
+#
+---
+- hosts: localhost
+  tasks:
+  - debug:
+      msg:
+      - "We first check for 'some thing'."
+      - "If it's there we execute one action."
+      - "If it's not, then we execute another action."
+
+  - block:
+    - name: check for "the thing". It **is not** there.
+      local_action: command "false" # simulate a check that doesn't find "the thing"
+      failed_when: False # never fail, we are only checking
+      check_mode:   no    # force to run when in check_mode
+      changed_when: False # does never change anything
+      register: check_something
+
+    - name: register a speaking variable for **non-existence** of "the thing"
+      local_action: command "true" # `meta: noop` doesn't support conditionals, what the fuck
+      check_mode:   no
+      changed_when: False
+      when: check_something.rc == 1
+      register: check_did_not_find_thing
+    
+    - name: do some action if check found "the thing"
+      local_action: command "true" # simulate action, dummy
+      when: check_did_not_find_thing is not exec_ok
+      register: executed_found
+    
+    - name: do some action if check did not find "the thing"
+      local_action: command "true"
+      when: check_did_not_find_thing is exec_ok
+      register: executed_not_found
+    
+    # making sure actions were executed as expected
+    - block:
+      - fail: msg=err_1
+        when: executed_found is not skipped
+      - fail: msg=err_2
+        when: executed_not_found is skipped
+      when: not ansible_check_mode
+
+    # making sure register variable is correct even in check mode
+    - block:
+      - fail: msg=err_3
+        when: check_did_not_find_thing is not exec_ok
+      when: ansible_check_mode
+
+
+  - block:
+    - name: check for "the thing". It **is not** there.
+      local_action: command "false"
+      failed_when: False
+      check_mode:   no
+      changed_when: False
+      register: check_something
+
+    - name: register a speaking variable for **existence** of "the thing"
+      local_action: command "true"
+      check_mode:   no
+      changed_when: False
+      when: check_something.rc == 0
+      register: check_did_find_thing
+    
+    - name: do some action if check found "the thing"
+      local_action: command "true" # simulate action, dummy
+      when: check_did_find_thing is exec_ok
+      register: executed_found
+    
+    - name: do some action if check did not find "the thing"
+      local_action: command "true" # simulate action, dummy
+      when: check_did_find_thing is not exec_ok
+      register: executed_not_found
+    
+    # making sure actions were executed as expected
+    - block:
+      - fail: msg=err_4
+        when: executed_found is not skipped
+      - fail: msg=err_5
+        when: executed_not_found is skipped
+      when: not ansible_check_mode
+
+    # making sure register variable is correct even in check mode
+    - block:
+      - fail: msg=err_6
+        when: check_did_find_thing is exec_ok
+      when: ansible_check_mode
+
+
+  - block:
+    - name: check for "the thing". It **is** there.
+      local_action: command "true"
+      failed_when: False
+      check_mode:   no
+      changed_when: False
+      register: check_something
+
+    - name: register a speaking variable for **non-existence** of "the thing"
+      local_action: command "true"
+      check_mode:   no
+      changed_when: False
+      when: check_something.rc == 1
+      register: check_did_not_find_thing
+    
+    - name: do some action if check found "the thing"
+      local_action: command "true" # simulate action, dummy
+      when: check_did_not_find_thing is not exec_ok
+      register: executed_found
+    
+    - name: do some action if check did not find "the thing"
+      local_action: command "true"
+      when: check_did_not_find_thing is exec_ok
+      register: executed_not_found
+    
+    # making sure actions were executed as expected
+    - block:
+      - fail: msg=err_7
+        when: executed_found is skipped
+      - fail: msg=err_8
+        when: executed_not_found is not skipped
+      when: not ansible_check_mode
+
+    # making sure register variable is correct even in check mode
+    - block:
+      - fail: msg=err_9
+        when: check_did_not_find_thing is exec_ok
+      when: ansible_check_mode
+
+
+  - block:
+    - name: check for "the thing". It **is** there.
+      local_action: command "true"
+      failed_when: False
+      check_mode:   no
+      changed_when: False
+      register: check_something
+
+    - name: register a speaking variable for **existence** of "the thing"
+      local_action: command "true"
+      check_mode:   no
+      changed_when: False
+      when: check_something.rc == 0
+      register: check_did_find_thing
+    
+    - name: do some action if check found "the thing"
+      local_action: command "true" # simulate action, dummy
+      when: check_did_find_thing is exec_ok
+      register: executed_found
+    
+    - name: do some action if check did not find "the thing"
+      local_action: command "true" # simulate action, dummy
+      when: check_did_find_thing is not exec_ok
+      register: executed_not_found
+    
+    # making sure actions were executed as expected
+    - block:
+      - fail: msg=err_10
+        when: executed_found is skipped
+      - fail: msg=err_11
+        when: executed_not_found is not skipped
+      when: not ansible_check_mode
+
+    # making sure register variable is correct even in check mode
+    - block:
+      - fail: msg=err_12
+        when: check_did_find_thing is not exec_ok
+      when: ansible_check_mode
+
+
+  - debug:
+      msg:
+       - "same blocks as before, but I also want everything"
+       - "to work with `failed_when: False`"
+
+  - block:
+    - name: check for "the thing". It **is not** there.
+      local_action: command "false" # simulate a check that doesn't find "the thing"
+      failed_when: False # never fail, we are only checking
+      check_mode:   no    # force to run when in check_mode
+      changed_when: False # does never change anything
+      register: check_something
+
+    - name: register a speaking variable for **non-existence** of "the thing"
+      local_action: command "true" # `meta: noop` doesn't support conditionals, what the fuck
+      failed_when: False
+      check_mode:   no
+      changed_when: False
+      when: check_something.rc == 1
+      register: check_did_not_find_thing
+    
+    - name: do some action if check found "the thing"
+      local_action: command "true" # simulate action, dummy
+      when: check_did_not_find_thing is not exec_ok
+      register: executed_found
+    
+    - name: do some action if check did not find "the thing"
+      local_action: command "true"
+      when: check_did_not_find_thing is exec_ok
+      register: executed_not_found
+    
+    # making sure actions were executed as expected
+    - block:
+      - fail: msg=err_13
+        when: executed_found is not skipped
+      - fail: msg=err_14
+        when: executed_not_found is skipped
+      when: not ansible_check_mode
+
+    # making sure register variable is correct even in check mode
+    - block:
+      - fail: msg=err_15
+        when: check_did_not_find_thing is not exec_ok
+      when: ansible_check_mode
+
+
+  - block:
+    - name: check for "the thing". It **is not** there.
+      local_action: command "false"
+      failed_when: False
+      check_mode:   no
+      changed_when: False
+      register: check_something
+
+    - name: register a speaking variable for **existence** of "the thing"
+      local_action: command "true"
+      failed_when: False
+      check_mode:   no
+      changed_when: False
+      when: check_something.rc == 0
+      register: check_did_find_thing
+    
+    - name: do some action if check found "the thing"
+      local_action: command "true" # simulate action, dummy
+      when: check_did_find_thing is exec_ok
+      register: executed_found
+    
+    - name: do some action if check did not find "the thing"
+      local_action: command "true" # simulate action, dummy
+      when: check_did_find_thing is not exec_ok
+      register: executed_not_found
+    
+    # making sure actions were executed as expected
+    - block:
+      - fail: msg=err_16
+        when: executed_found is not skipped
+      - fail: msg=err_17
+        when: executed_not_found is skipped
+      when: not ansible_check_mode
+
+    # making sure register variable is correct even in check mode
+    - block:
+      - fail: msg=err_18
+        when: check_did_find_thing is exec_ok
+      when: ansible_check_mode
+
+
+  - block:
+    - name: check for "the thing". It **is** there.
+      local_action: command "true"
+      failed_when: False
+      check_mode:   no
+      changed_when: False
+      register: check_something
+
+    - name: register a speaking variable for **non-existence** of "the thing"
+      local_action: command "true"
+      failed_when: False
+      check_mode:   no
+      changed_when: False
+      when: check_something.rc == 1
+      register: check_did_not_find_thing
+    
+    - name: do some action if check found "the thing"
+      local_action: command "true" # simulate action, dummy
+      when: check_did_not_find_thing is not exec_ok
+      register: executed_found
+    
+    - name: do some action if check did not find "the thing"
+      local_action: command "true"
+      when: check_did_not_find_thing is exec_ok
+      register: executed_not_found
+    
+    # making sure actions were executed as expected
+    - block:
+      - fail: msg=err_19
+        when: executed_found is skipped
+      - fail: msg=err_20
+        when: executed_not_found is not skipped
+      when: not ansible_check_mode
+
+    # making sure register variable is correct even in check mode
+    - block:
+      - fail: msg=err_21
+        when: check_did_not_find_thing is exec_ok
+      when: ansible_check_mode
+
+
+  - block:
+    - name: check for "the thing". It **is** there.
+      local_action: command "true"
+      failed_when: False
+      check_mode:   no
+      changed_when: False
+      register: check_something
+
+    - name: register a speaking variable for **existence** of "the thing"
+      local_action: command "true"
+      failed_when: False
+      check_mode:   no
+      changed_when: False
+      when: check_something.rc == 0
+      register: check_did_find_thing
+    
+    - name: do some action if check found "the thing"
+      local_action: command "true" # simulate action, dummy
+      when: check_did_find_thing is exec_ok
+      register: executed_found
+    
+    - name: do some action if check did not find "the thing"
+      local_action: command "true" # simulate action, dummy
+      when: check_did_find_thing is not exec_ok
+      register: executed_not_found
+    
+    # making sure actions were executed as expected
+    - block:
+      - fail: msg=err_22
+        when: executed_found is skipped
+      - fail: msg=err_23
+        when: executed_not_found is not skipped
+      when: not ansible_check_mode
+
+    # making sure register variable is correct even in check mode
+    - block:
+      - fail: msg=err_24
+        when: check_did_find_thing is not exec_ok
+      when: ansible_check_mode
+
