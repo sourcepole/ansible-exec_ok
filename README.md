@@ -79,6 +79,8 @@ So even though the condition that determines whether `baz` should be
 run (`when: foo_bar_status.stat.exists`) is false, ansible will run `baz`
 nonetheless.
 
+This behavior has been [reported as a bug against ansible](https://github.com/ansible/ansible/issues/25027)
+
 Installation
 ----------
 
